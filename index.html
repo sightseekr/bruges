@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Ultimate Map: Bruges</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
+  <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/fuse.js/dist/fuse.min.js"></script>
+  <style>
+     @import url('https://fonts.googleapis.com/css2?family=Avenir:wght@300;400&family=Brandon+Grotesque:wght@400;700&display=swap');
+
+/* Login page styles */
+#login-page {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(180deg, #FFFEFC, #FADBD8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.login-container {
+  text-align: center;
+  background: #FFFEFC;
+  padding: 30px;
+  border-radius: 24px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+  max-width: 420px;
+  width: 90%;
+}
+
+.login-logo {
+  width: 100%;
+  max-width: 370px;
+  height: auto;
+  margin-bottom: 0px;
+}
+
+.login-container h2 {
+  font-family: 'Brandon Grotesque', sans-serif;
+  font-size: 1.8em;
+  margin-bottom: 10px;
+  color: #444454;
+}
+
+.login-subtitle {
+  font-size: 1em;
+  color: #666;
+  margin-bottom: 24px;
+}
+
+#password {
+  width: 100%;
+  padding: 14px 18px;
+  box-sizing: border-box;
+  margin-bottom: 16px;
+  border-radius: 12px;
+  border: 1px solid #F5B9B4;
+  background-color: #FFFEFC;
+  font-size: 1em;
+  outline: none;
+  transition: border-color 0.3s ease;
+}
+
+#password:focus {
+  border-color: #EA736B;
+}
+
+#login-btn {
+  background-color: #EA736B;
+  color: white;
+  padding: 14px 28px;
+  border: none;
+  border-radius: 30px;
+  cursor: pointer;
+  font-family: 'Avenir', sans-serif;
+  font-weight: bold;
+  font-size: 1em;
+  transition: all 0.3s ease;
+  width: 100%;
+}
+
+#login-btn:hover {
+  background-color: #EF968F;
+  transform: scale(1.03);
+}
+
+#error {
+  color: #EA736B;
+  font-style: italic;
+  margin-top: 10px;
+  display: none;
+}
+    body { margin: 0; padding: 0; font-family: sans-serif; }
+    #map-container { display: none; }
+    #map { position: absolute; top: 0; bottom: 0; width: 100%; }
+    .mapboxgl-popup-content {
+      background-color: rgba(255, 255, 255, 1) !important;
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-family: sans-serif;
+      max-width: 220px;
+      box-shadow: 0 1px 5px rgba(0,0,0,0.2);
+    }
+    .custom-popup strong {
+      font-weight: bold;
+      display: block;
+      margin-bottom: 4px;
+    }
+    .custom-popup p {
+      font-size: 0.85em;
+      font-style: italic;
+      margin: 0 0 6px;
+    }
+    .custom-popup .directions-btn,
+    .custom-popup .mark-visited-btn {
+      all: unset;
+      background-color: #540000;
+      color: white;
+      padding: 6px 10px;
+      border: none;
+      border-radius: 16px;
+      cursor: pointer;
+      font-size: 0.85em;
+      display: inline-flex;
+      align-items: center;
+      min-height: 25px;
+      max-height: 26px;
+      gap: 5px;
+      text-decoration: none;
+    }
+    .custom-popup .directions-btn:hover {
+      background-color: #330101;
+    }
+    #search-container {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1000;
+      width: 90%;
+      max-width: 400px;
+    }
+    #search {
+      width: 100%;
+      padding: 8px 12px;
+      font-size: 1em;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+    #suggestions {
+      background: white;
+      border: 1px solid #ccc;
+      border-top: none;
+      max-height: 200px;
+      overflow-y: auto;
+      position: absolute;
+      width: 100%;
+      z-index: 2;
+    }
+    .suggestion {
+      padding: 8px 12px;
+      cursor: pointer;
+    }
+    .suggestion:hover {
+      background: #f0f0f0;
+    }
+    .no-results {
+      padding: 8px 12px;
+      color: #666;
+      font-style: italic;
+    }
+    #layer-toggle {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-size: 0.9em;
+  z-index: 2;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+}
+
+#layer-toggle h3 {
+  margin: 0 0 8px;
+  font-size: 1em;
+}
+#layer-toggle label {
+  display: block;
+  cursor: pointer;
+}
+#layer-toggle label {
+  display: flex;
+  align-items: center;
+  margin-bottom: 4px;
+  gap: 6px;
+}
+
+#layer-toggle .legend-icon {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+}
+.icon {
+  display: inline-block;
+  background-image: url('https://api.mapbox.com/styles/v1/sightseekr/cmjbyftk1000i01qv0z2o6qhe/sprite.png?access_token=pk.eyJ1Ijoic2lnaHRzZWVrciIsImEiOiJjbWgxdmNsZ2owc3h2MDhxcGdiZno4c3ptIn0.ODNk5NVKUxNh0b9QoL5tqQ');
+  background-repeat: no-repeat;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+/* Example numbers — update from your JSON */
+.icon-cafe {
+  background-position: -92px -286px;
+  width: 20px;
+  height: 20px;
+}
+
+.icon-restaurant {
+  background-position: -0px -386px;
+  width: 20px;
+  height: 20px;
+}
+
+.icon-bar {
+  background-position: -264px -266px;
+  width: 20px;
+  height: 20px;
+}
+
+.icon-attraction {
+  background-position: -328px -245px;
+  width: 20px;
+  height: 20px;
+}
+  </style>
+</head>
+<body>
+    <!-- Login Page -->
+<div id="login-page">
+  <div class="login-container">
+    <img 
+      src="https://static.wixstatic.com/media/eb9535_9d1043c625be4e6882a9bc0ad92f3463~mv2.png/v1/crop/x_0,y_598,w_1500,h_338/fill/w_1200,h_270,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/MTM%20Thin%20Pink.png" 
+      alt="Logo" 
+      class="login-logo" 
+    />
+    <h2>Welcome, explorer!</h2>
+    <p class="login-subtitle">This map is password protected</p>
+    <form id="login-form">
+      <input type="password" id="password" placeholder="Enter password" />
+      <button type="submit" id="login-btn">Enter</button>
+    </form>
+    <p id="error">Incorrect password</p>
+  </div>
+</div>
+<div id="map-container">
+<div id="map"></div>
+<div id="search-container">
+  <input type="text" id="search" placeholder="Find a Sightseekr recommendation in Bruges..." />
+  <div id="suggestions"></div>
+</div>
+<div id="layer-toggle">
+  <h3>Sightseekr Recommended...</h3>
+  <label><input type="checkbox" id="toggle-attractions" checked> <span class="icon icon-attraction"></span> Sightseeing</label><br>
+  <label><input type="checkbox" id="toggle-restaurants" checked> <span class="icon icon-restaurant"></span> Restaurants</label><br>
+  <label><input type="checkbox" id="toggle-bars" checked> <span class="icon icon-bar"></span> Bars</label><br>
+  <label><input type="checkbox" id="toggle-cafes" checked> <span class="icon icon-cafe"></span> Cafes</label>
+</div></div>
+
+<script>
+  window.addEventListener('DOMContentLoaded', () => {
+  if (localStorage.getItem('authenticated') === 'true') {
+    document.getElementById('login-page').style.display = 'none';
+    document.getElementById('map-container').style.display = 'block';
+    initializeMap();
+  }
+});
+     const CORRECT_PASSWORD = "bruges25";
+let map;
+
+// Login handler
+document.getElementById('login-form').addEventListener('submit', function(e) {
+  e.preventDefault();
+  const input = document.getElementById('password').value;
+  
+  if (input === CORRECT_PASSWORD) {
+    localStorage.setItem('authenticated', 'true');
+    document.getElementById('login-page').style.display = 'none';
+    document.getElementById('map-container').style.display = 'block';
+    initializeMap();
+  } else {
+    document.getElementById('error').style.display = 'block';
+  }
+});
+    function initializeMap() {
+  mapboxgl.accessToken = 'pk.eyJ1Ijoic2lnaHRzZWVrciIsImEiOiJjbWgxdmNsZ2owc3h2MDhxcGdiZno4c3ptIn0.ODNk5NVKUxNh0b9QoL5tqQ';
+
+    map = new mapboxgl.Map({
+    container: 'map',
+    style: 'mapbox://styles/sightseekr/cmjbyftk1000i01qv0z2o6qhe',
+    center: [3.230716, 51.209670],
+    zoom: 13.36
+  });
+
+  map.addControl(new mapboxgl.NavigationControl(), 'bottom-right');
+  map.addControl(new mapboxgl.GeolocateControl({
+    positionOptions: { enableHighAccuracy: true },
+    trackUserLocation: true,
+    showUserHeading: true
+}), 'bottom-right');
+
+const savedPoints = [
+  {
+    name: "Belfort Tower",
+    tags: ["tower", "belfry", "landmark", "views", "historic"],
+    coordinates: [3.2248, 51.20814],
+    description: "A medieval Belfry tower, right in the centre of Bruges' main market square. Entry costs €15 and means that you can climb the 366 stairs to the top for a panoramic view of the city, as well seeing historical parts of the tower on your way up."
+  },
+  {
+    name: "Rosary Quay Viewpoint",
+    tags: ["viewpoint", "canals", "old town", "scenic"],
+    coordinates: [3.22786, 51.20737],
+    description: "A stunning area of the Bruges Old Town area where you can look out onto the canals and buildings of the city."
+  },
+  {
+    name: "The Beer Wall",
+    tags: ["bar", "beer", "shop", "local"],
+    coordinates: [3.22702, 51.20747],
+    description: "A bar and shop that is home to a beer wall (yes, an actual wall just full of different bottles of beer). Amazing to see, even better to stop for a drink or buy some Belgian beers to take home!"
+  },
+  {
+    name: "Historium",
+    tags: ["museum", "history", "landmark", "market square"],
+    coordinates: [3.22495, 51.20908],
+    description: "Another stunning building in the Market square, which is incredible just to look at from the outside. If you do choose to buy tickets and head inside, this is actually a museum where fictional characters tell you stories about the history of the city!"
+  },
+  {
+    name: "Sint-Salvatorskathedraal",
+    tags: ["cathedral", "church", "religious", "landmark"],
+    coordinates: [3.22154, 51.20559],
+    description: "A large Cathedral in Bruges' city centre, which is free to enter and look around, so be sure not to miss out!"
+  },
+  {
+    name: "Brewery Bourgogne des Flandres",
+    tags: ["brewery", "beer", "tour", "terrace"],
+    coordinates: [3.22617, 51.2069],
+    description: "Take a tour of this local, independent brewery to explore how Belgian beer is really made, and maybe even sample a few! And you definitely need to stay for a pint afterwards, and enjoy the view with your beer from their incredible riverside terrace."
+  },
+  {
+    name: "Sint-Janshuismolen Windmill",
+    tags: ["windmill", "museum", "historic", "river"],
+    coordinates: [3.23814, 51.21545],
+    description: "One of several large windmills by Bruges' main river, but the only one of the four where you can enter! Grain is still ground here whenever the wind is high enough. Get tickets to explore their museum and tours, even seeing the historical machines in action on a windy day."
+  },
+  {
+    name: "The New Parrot Windmill",
+    tags: ["windmill", "scenic", "walk"],
+    coordinates: [3.22567,51.20806],
+    description: "Named after the parrot sculpture that sat on it's roof, this is one of four windmills on a large stretch of grass, creating a very scenic walkway."
+  },
+  {
+    name: "Koelewei Windmill",
+    tags: ["windmill", "river", "historic"],
+    coordinates: [3.23426, 51.21995],
+    description: "A functional windmill along the same stretch as several others, right by the river."
+  },
+  {
+    name: "Basilica of the Holy Blood",
+    tags: ["basilica", "religious", "historic", "landmark"],
+    coordinates: [3.22654, 51.20813],
+    description: "A striking basilica which holds a vial of what is said to be the blood of Jesus. It's free to enter and see the holy blood, but to visit the Treasury Museum on the same site you will need to purchase a ticket."
+  },
+  {
+    name: "Belgian Chocolate Workshop in Bruges",
+    tags: ["workshop", "chocolate", "experience"],
+    coordinates: [3.22289, 51.2113],
+    description: "The home of a brilliant chocolate-making workshop in Bruges. We visited and made Belgian Chocolate truffles (and a huge mess). It's a great way to immerse yourself in the culture and walk away with some treats too!"
+  },
+  {
+    name: "Sint-Annakerk",
+    tags: ["church", "cathedral", "religious"],
+    coordinates: [3.23203, 51.21197],
+    description: "Another stunning Cathedral, this time out of the main Old Town area of Bruges."
+  },
+  {
+    name: "Gentpoort",
+    tags: ["gate", "tower", "historic", "landmark"],
+    coordinates: [3.23459, 51.20304],
+    description: "A gateway and guard tower as you enter the city centre of Bruges. You can't go inside but it's great photo spot or place to stop by as you're wandering through the city."
+  },
+  {
+    name: "Watertower Gentpoortvest",
+    tags: ["tower", "river", "historic"],
+    coordinates: [3.23236, 51.20131],
+    description: "A large tower by the river, on the edge of the city centre of Bruges. If you walk around the city, following the water, you'll see many similar medieval structures lining the edge of the city centre."
+  },
+  {
+    name: "Barge bridge (Bargebrug)",
+    tags: ["bridge", "park", "canal"],
+    coordinates: [3.22586, 51.19844],
+    description: "A bright red bridge in the centre of a park, crossing a small canal. This bridge connects the older, more medieval area of Bruges, and the modern side which holds infrastructure such as the main coach and bus station."
+  },
+  {
+    name: "Jan van Eyckplein",
+    tags: ["square", "canals", "cafes"],
+    coordinates: [3.22591, 51.21155],
+    description: "A city square at the end of one of Bruges' famous canals, with benches to sit and enjoy the view. This spot is lined with plenty of bars and cafes if you want to stop off for a coffee (or a beer!)."
+  },
+  {
+    name: "Queen Astrid Park",
+    tags: ["park", "nature", "relaxing"],
+    coordinates: [3.23123, 51.20618],
+    description: "A picturesque park right in the centre of the city. Perfect to escape the crowds and see some pretty water features, trees, and flowers."
+  },
+  {
+    name: "Chocoladehuisje",
+    tags: ["chocolate", "shop", "dessert"],
+    coordinates: null,
+    description: "You simply can't visit Belgium without going into one (or twelve) of their gorgeous Belgian chocolate shops! This is just one example, be sure to wander through the city and stop in as many as your heart desires."
+  },
+  {
+    name: "Meifoor Brugge",
+    tags: ["square", "markets", "events"],
+    coordinates: [3.21747, 51.20524],
+    description: "A large market square home to regular morning markets with fresh produce as well as hot food and drink options. This is also a popular place for festivals, fairgrounds and street performances, so keep your eye out for those!"
+  },
+  {
+    name: "Minnewater Park",
+    tags: ["park", "nature", "scenic"],
+    coordinates: [3.22527, 51.19952],
+    description: "A scenic park and garden on the edge of the city centre."
+  },
+  {
+    name: "Markt Square",
+    tags: ["square", "landmark", "historic"],
+    coordinates: [3.22399, 51.20861],
+    description: "The main square of Bruges, home to many historical landmarks such as the Belfort (Belfry) tower and the Historium."
+  },
+  {
+    name: "Burg Square",
+    tags: ["square", "historic", "culture"],
+    coordinates: [3.22683, 51.2085],
+    description: "Another main square in Bruges, full of even more history and culture. This square is home to a Basilica and the City Hall, with a bustling atmosphere."
+  },
+  {
+    name: "Bruges City Hall",
+    tags: ["city hall", "gothic", "historic"],
+    coordinates: [3.2271, 51.20832],
+    description: "The oldest city hall in Belgium, this building began construction in the 14th century, and is a perfect example of gothic architecture! It's open to visitors for a ticket price of € 8 to see the impressive gothic hall and vault."
+  },
+  {
+    name: "Craenenburg Bar",
+    tags: ["bar", "beer", "views"],
+    coordinates: [3.22371, 51.20865],
+    description: "The perfect spot to enjoy the atmosphere of Bruges' Market Square, with a Belgian beer and a view of the Belfry tower. This bar is right in the centre of the main tourist square in Bruges, so be aware you'll be paying more than usual prices, for potentially not as authentic food. But a brilliant spot to chill and watch the world go by nevertheless!"
+  },
+  {
+    name: "Bar Des Amis",
+    tags: ["bar", "nightlife", "beer"],
+    coordinates: [3.22317, 51.20919],
+    description: "An amazing bar with a bustling atmosphere in a really lively area of the city, especially into the evening. It's absolutely worth a stop for a local beer, they have a great selection!"
+  },
+  {
+    name: "Blend Wine Bar and Shop",
+    tags: ["wine bar", "cosy", "drinks"],
+    coordinates: [3.22334, 51.20989],
+    description: "A wine bar with a sophisticated feel, and an amazing range of drinks. We fell in love with every wine we tasted here! They're known for their friendly, helpful, knowledgeable staff, and the atmosphere is really cosy and comfortable."
+  },
+  {
+    name: "Bakery Petris",
+    tags: ["bakery", "cafe", "pastries"],
+    coordinates: [3.21937, 51.2055],
+    description: "A cosy coffee shop and bakery with incredible pastries and a chilled atmosphere."
+  },
+  {
+    name: "'T Schrijverke",
+    tags: ["restaurant", "belgian food", "views"],
+    coordinates: [3.22436, 51.20529],
+    description: "A gorgeous restaurant with indoor and (heated) outdoor seating, with a view of the nearby Cathedral. Their Flemish beef stew is delicious!"
+  },
+  {
+    name: "Orfeo",
+    tags: ["restaurant", "italian", "wine"],
+    coordinates: [3.22345, 51.2118],
+    description: "A brilliant Italian restaurant that is perfect if you need a break from Belgian fries!! They serve really high-quality Italian dishes, and have a great wine selection too."
+  },
+  {
+    name: "Willa Brunch",
+    tags: ["brunch", "cafe", "breakfast"],
+    coordinates: [3.22569, 51.21072],
+    description: "A fantastic coffee shop and brunch restaurants with a choice of pastries and cakes, toasts, eggs and even breakfast boards with a range of different themes!"
+  },
+  {
+    name: "Brugespub",
+    tags: ["bar", "underground", "beer"],
+    coordinates: [3.22341, 51.21175],
+    description: "An underground bar with a selection of local beers and other drinks, known for it’s helpful owner and friendly staff"
+  },
+  {
+    name: "Ribs’n Beer",
+    tags: ["restaurant", "ribs", "beer"],
+    coordinates: [3.21846, 51.21332],
+    description: "Many visitors' dream - a restaurant serving UNLIMITED ribs for a set price, in a range of different flavours. And of course, you have to accompany them with Belgian fries and Belgian beer!"
+  }
+];
+
+
+const directionsLinks = {
+  "Belfort Tower": "https://maps.google.com/?cid=7589814388937032024",
+  "Rosary Quay Viewpoint": "https://maps.google.com/?cid=1201363375708128781",
+  "The Beer Wall": "https://maps.google.com/?cid=9817930894550296638",
+  "Historium": "https://maps.google.com/?cid=2393976175188031556",
+  "Sint-Salvatorskathedraal": "https://maps.google.com/?cid=300977489077353994",
+  "Brewery Bourgogne des Flandres": "https://maps.google.com/?cid=14652205177361062875",
+  "Sint-Janshuismolen Windmill": "https://maps.google.com/?cid=15855442739499338147",
+  "The New Parrot Windmill": "https://maps.google.com/?cid=10061786461389993538",
+  "Koelewei Windmill": "https://maps.google.com/?cid=9400900368139899680",
+  "Basilica of the Holy Blood": "https://maps.google.com/?cid=6067829549226383192",
+  "Belgian Chocolate Workshop in Bruges": "https://maps.google.com/?cid=17473707819718426243",
+  "Sint-Annakerk": "https://maps.google.com/?cid=8512790939351216685",
+  "Gentpoort": "https://maps.google.com/?cid=14922704796244423320",
+  "Watertower Gentpoortvest": "https://maps.google.com/?cid=3671046615699740842",
+  "Barge bridge (Bargebrug)": "https://maps.google.com/?cid=3820565754685298346",
+  "Jan van Eyckplein": "https://maps.google.com/?cid=4272505352703395608",
+  "Queen Astrid Park": "https://maps.google.com/?cid=10249104807254224279",
+  "Meifoor Brugge": "https://maps.google.com/?cid=13041601708086674724",
+  "Minnewater Park": "https://maps.google.com/?cid=9117454375267355819",
+  "Markt Square": "https://maps.google.com/?q=Markt,+8000+Brugge,+Belgi%C3%AB&ftid=0x47c350d00c097fdd:0xaa73aaedf870826e",
+  "Burg Square": "https://maps.google.com/?cid=11531928152841650763",
+  "Bruges City Hall": "https://maps.google.com/?cid=1115305477242743108",
+  "Craenenburg Bar": "https://maps.google.com/?cid=12600022416258453465",
+  "Bar Des Amis": "https://maps.google.com/?cid=4936955962210927661",
+  "Blend Wine Bar and Shop": "https://maps.google.com/?cid=10553778452246206756",
+  "Bakery Petris": "https://maps.google.com/?cid=1061901001644873016",
+  "'T Schrijverke": "https://maps.google.com/?cid=801390687864809784",
+  "Orfeo": "https://maps.google.com/?cid=10599810544207366623",
+  "Willa Brunch": "https://maps.google.com/?cid=1588337285575845848",
+  "Brugespub": "https://maps.google.com/?cid=6249705085024227649",
+  "Ribs’n Beer": "https://maps.google.com/?cid=16142202987574427550"
+}
+
+
+  const fuse = new Fuse(savedPoints, {
+    keys: ['name', 'tags'],
+    threshold: 0.4,
+    ignoreLocation: true,
+    includeScore: true
+  });
+
+  const searchInput = document.getElementById('search');
+  const suggestionsDiv = document.getElementById('suggestions');
+  let currentPopup = null;
+  let allFeatures = [];
+  let popupOpenedByClick = false
+  let popupHovering = false;
+
+  function isMobile() {
+    return /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  }
+
+function createPopup(feature, lngLat, clicked = false) {
+  // remove any existing popup
+  if (currentPopup) {
+    currentPopup.remove();
+    currentPopup = null;
+  }
+
+  // set whether this popup is "locked" by a click
+  popupOpenedByClick = clicked;
+  // reset hover flag
+  popupHovering = false;
+
+  const name = feature.properties?.name || feature.properties?.Name || feature.properties?.title || "No title";
+  const description = feature.properties?.description || feature.properties?.Description || "No description";
+  const directions = directionsLinks[name] || `https://www.google.com/maps/search/${encodeURIComponent(name)}`;
+
+  currentPopup = new mapboxgl.Popup({ closeButton: false })
+    .setLngLat(lngLat)
+    .setHTML(`
+      <div class="custom-popup">
+        <strong>${name}</strong>
+        <p>${description}</p>
+        <a href="${directions}" class="directions-btn" target="_blank">
+          <span>📍</span> <span>Directions</span>
+        </a>
+      </div>
+    `)
+    .addTo(map);
+
+  // Popup DOM hover handlers — keep popup open while mouse is over it
+  const popupEl = document.querySelector(".mapboxgl-popup");
+  if (popupEl) {
+    popupEl.addEventListener("mouseenter", () => {
+      popupHovering = true;
+    });
+    popupEl.addEventListener("mouseleave", () => {
+      popupHovering = false;
+      // close only if not locked by click
+      if (!popupOpenedByClick && currentPopup) {
+        currentPopup.remove();
+        currentPopup = null;
+      }
+    });
+  }
+}
+
+function searchAndZoomToFeature(name) {
+  const lowerName = name.toLowerCase();
+
+  // 1️⃣ First: check all loaded features (includes description)
+  for (let feature of allFeatures) {
+    const featureName =
+      feature.properties?.name ||
+      feature.properties?.Name ||
+      feature.properties?.title;
+
+    if (featureName && featureName.toLowerCase().includes(lowerName)) {
+      const coords = feature.geometry.coordinates;
+      map.flyTo({ center: coords, zoom: 17 });
+
+      setTimeout(() => createPopup(feature, coords, true), 300);
+      return;
+    }
+  }
+
+  // 2️⃣ If not found, check currently rendered features (backup)
+  const rendered = map.queryRenderedFeatures();
+  for (let feature of rendered) {
+    const featureName =
+      feature.properties?.name ||
+      feature.properties?.Name ||
+      feature.properties?.title;
+
+    if (featureName && featureName.toLowerCase().includes(lowerName)) {
+      const coords = feature.geometry.coordinates;
+      map.flyTo({ center: coords, zoom: 17 });
+
+      setTimeout(() => createPopup(feature, coords, true), 300);
+      return;
+    }
+  }
+
+// 3️⃣ Use savedPoints (guaranteed list with coords)
+const matchingPoint = savedPoints.find(p => p.name.toLowerCase().includes(lowerName));
+if (matchingPoint) {
+  if (matchingPoint.coordinates) {
+    const directions = directionsLinks[matchingPoint.name] || `https://www.google.com/maps/search/${encodeURIComponent(matchingPoint.name)}`;
+    map.flyTo({ center: matchingPoint.coordinates, zoom: 17 });
+    setTimeout(() => {
+      currentPopup = new mapboxgl.Popup({ closeButton: false })
+        .setLngLat(matchingPoint.coordinates)
+        .setHTML(`
+          <div class="custom-popup">
+            <strong>${matchingPoint.name}</strong>
+            <p>${matchingPoint.description || ''}</p>
+            <a href="${directions}" class="directions-btn" target="_blank">
+              <span>📍</span> <span>Directions</span>
+            </a>
+          </div>
+        `)
+        .addTo(map);
+    }, 300);
+  } else {
+    alert('"' + matchingPoint.name + '": Coordinates not available.');
+  }
+  return;
+}
+}
+  searchInput.addEventListener('input', () => {
+    const query = searchInput.value.trim();
+    suggestionsDiv.innerHTML = '';
+    if (!query) {
+      savedPoints.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'suggestion';
+        div.textContent = item.name;
+        div.onclick = () => {
+          searchInput.value = item.name;
+          suggestionsDiv.innerHTML = '';
+          searchAndZoomToFeature(item.name);
+        };
+        suggestionsDiv.appendChild(div);
+      });
+      return;
+    }
+    const results = fuse.search(query);
+    if (results.length) {
+      results.forEach(({ item }) => {
+        const div = document.createElement('div');
+        div.className = 'suggestion';
+        div.textContent = item.name;
+        div.onclick = () => {
+          searchInput.value = item.name;
+          suggestionsDiv.innerHTML = '';
+          searchAndZoomToFeature(item.name);
+        };
+        suggestionsDiv.appendChild(div);
+      });
+    } else {
+      const div = document.createElement('div');
+      div.className = 'no-results';
+      div.textContent = "Can't find what you're looking for? It must not be somewhere we've tried & tested for you yet! Why not try a Google Search instead?";
+      suggestionsDiv.appendChild(div);
+    }
+  });
+
+  searchInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      const query = searchInput.value.trim();
+      const result = fuse.search(query)[0];
+      if (result) {
+        searchAndZoomToFeature(result.item.name);
+        suggestionsDiv.innerHTML = '';
+      }
+    }
+  });
+
+  searchInput.addEventListener('focus', () => searchInput.dispatchEvent(new Event('input')));
+
+  document.addEventListener('click', function (event) {
+    const isClickInside = searchInput.contains(event.target) || suggestionsDiv.contains(event.target);
+    if (!isClickInside) {
+      suggestionsDiv.innerHTML = '';
+    }
+  });
+
+  map.on('load', () => {
+    const layers = ['sightseeing', 'restaurants', 'bars', 'cafes'];
+    const layerCheckboxes = {
+  sightseeing: document.getElementById('toggle-attractions'),
+  restaurants: document.getElementById('toggle-restaurants'),
+  bars: document.getElementById('toggle-bars'),
+  cafes: document.getElementById('toggle-cafes')
+};
+    const layerToSourceLayer = {
+      'sightseeing': 'brugessights-cq4hxz',
+      'restaurants': 'brugesrest-d7pz9a',
+      'bars': 'brugesbar-969v3b',
+      'cafes': 'brugescafe-9c90xe'
+    };
+    const sourceId = 'composite';
+
+    function loadAllFeatures() {
+      layers.forEach(layer => {
+        const sourceLayer = layerToSourceLayer[layer];
+        try {
+          const sourceFeatures = map.querySourceFeatures(sourceId, {
+            sourceLayer: sourceLayer
+          });
+          sourceFeatures.forEach(feature => {
+            const isDuplicate = allFeatures.some(existing => 
+              existing.properties && feature.properties &&
+              existing.properties.name === feature.properties.name
+            );
+            if (!isDuplicate && feature.properties && feature.properties.name) {
+              allFeatures.push(feature);
+            }
+          });
+        } catch (error) {
+          const renderedFeatures = map.queryRenderedFeatures({ layers: [layer] });
+          renderedFeatures.forEach(feature => {
+            const isDuplicate = allFeatures.some(existing => 
+              existing.properties && feature.properties &&
+              existing.properties.name === feature.properties.name
+            );
+            if (!isDuplicate && feature.properties && feature.properties.name) {
+              allFeatures.push(feature);
+            }
+          });
+     }
+      });
+    }
+
+    map.on('data', (e) => {
+      if (e.dataType === 'source' && e.sourceId === sourceId) {
+        allFeatures = [];
+        loadAllFeatures();
+      }
+    });
+
+    map.once('idle', () => {
+      if (allFeatures.length === 0) {
+        loadAllFeatures();
+      }
+    });
+Object.entries(layerCheckboxes).forEach(([layerId, checkbox]) => {
+  if (!checkbox) return;
+
+  checkbox.addEventListener('change', (e) => {
+    const visibility = e.target.checked ? 'visible' : 'none';
+
+    if (map.getLayer(layerId)) {
+      map.setLayoutProperty(layerId, 'visibility', visibility);
+    } else {
+      console.warn(`Layer not found: ${layerId}`);
+    }
+  });
+});
+if (!isMobile()) {
+  layers.forEach(layer => {
+    // Hover: show popup (not locked)
+    map.on('mouseenter', layer, e => {
+      map.getCanvas().style.cursor = 'pointer';
+      createPopup(e.features[0], e.lngLat, false);
+    });
+
+    // When leaving the marker: wait a short tick and only close if
+    // not hovering the popup and not clicked (locked)
+    map.on('mouseleave', layer, () => {
+      map.getCanvas().style.cursor = '';
+      setTimeout(() => {
+        if (!popupOpenedByClick && !popupHovering && currentPopup) {
+          currentPopup.remove();
+          currentPopup = null;
+        }
+      }, 40); // tiny delay to allow mouse to enter popup
+    });
+
+    // Click on marker: open popup and lock it (until clicking map background)
+    map.on('click', layer, e => {
+      if (currentPopup) currentPopup.remove();
+      createPopup(e.features[0], e.lngLat, true);
+    });
+  });
+}else {
+    // Mobile: only click to open popup (no hover)
+    layers.forEach(layer => {
+        map.on('click', layer, e => {
+        if (currentPopup) currentPopup.remove();
+        createPopup(e.features[0], e.lngLat, true);
+        });
+    });
+}
+    // Click on map background: close any open popup
+    map.on('click', (e) => {
+      const features = map.queryRenderedFeatures(e.point, { layers: layers });
+      if (features.length === 0 && currentPopup) {
+        currentPopup.remove();
+        currentPopup = null;
+        popupOpenedByClick = false;
+      }
+    });
+  });
+}
+</script>
+</body>
+</html> 
